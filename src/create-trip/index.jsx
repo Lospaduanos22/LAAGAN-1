@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Input } from '../components/ui/input';
 import GooglePlacesAutocomplete from 'react-google-places-autocomplete';
-import { SelectBudgetOptions, SelectTravelList } from '@/constants/options';
+import { AI_PROMPT, SelectBudgetOptions, SelectTravelList } from '@/constants/options';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
+import { chatSession } from '@/service/AIModal';
 
 function CreateTrip() {
   const [place, setPlace] = useState(null); // State for Google Places input
@@ -23,30 +25,37 @@ function CreateTrip() {
     console.log('Updated formData:', formData);
   }, [formData]);
 
-  const OnGenerateTrip = () => {
-    if (!formData.location) {
-      setError('Please select a location.');
+  const OnGenerateTrip =async() => {
+    // Check if any of the required fields are missing or invalid
+    if (
+      !formData.location ||
+      !formData.daysStaying ||
+      formData.daysStaying > 5 ||
+      !formData.budget ||
+      !formData.travelWith
+    ) {
+      toast.error('Please fill all the details.');   
       return;
     }
 
-    if (formData.daysStaying && formData.daysStaying > 5) {
-      setError('Please enter trip days less than or equal to 5.');
-      return;
-    }
+    // All validations passed
+    toast.success('Trip details successfully generated!');
 
-    if (!formData.budget) {
-      setError('Please select a budget option.');
-      return;
-    }
+    const FINAL_PROMPT = AI_PROMPT
+      .replace('{location}', formData?.location?.label || 'your destination')
+      .replace('{daysStaying}', formData?.daysStaying || 'a few')
+      .replace('{travelWith}', formData?.travelWith || 'travelers')
+      .replace('{budget}', formData?.budget || 'a flexible budget');
 
-    if (!formData.travelWith) {
-      setError('Please select your travel companions.');
-      return;
-    }
+    console.log(FINAL_PROMPT);
 
-    setError('');
-    console.log(formData);
+    const result=await chatSession.sendMessage(FINAL_PROMPT);
+
+    console.log(result?.response?.text());
+
   };
+
+
 
   return (
     <div className="sm:px-10 md:px-32 lg:px-56 xl:px-10 px-5 mt-10">
@@ -96,9 +105,8 @@ function CreateTrip() {
             {SelectBudgetOptions.map((item, index) => (
               <button
                 key={index}
-                className={`p-4 border cursor-pointer rounded-lg hover:shadow-lg ${
-                  formData.budget === item.title ? 'border-orange-500' : ''
-                }`}
+                className={`p-4 border cursor-pointer rounded-lg hover:shadow-lg ${formData.budget === item.title ? 'border-orange-500' : ''
+                  }`}
                 onClick={() => handleInputChange('budget', item.title)}
               >
                 <h2 className="text-4xl">{item.icon}</h2>
@@ -116,9 +124,8 @@ function CreateTrip() {
             {SelectTravelList.map((item, index) => (
               <button
                 key={index}
-                className={`p-4 border cursor-pointer rounded-lg hover:shadow-lg ${
-                  formData.travelWith === item.title ? 'border-orange-500' : ''
-                }`}
+                className={`p-4 border cursor-pointer rounded-lg hover:shadow-lg ${formData.travelWith === item.title ? 'border-orange-500' : ''
+                  }`}
                 onClick={() => handleInputChange('travelWith', item.title)}
               >
                 <h2 className="text-4xl">{item.icon}</h2>
