@@ -5,11 +5,26 @@ import { AI_PROMPT, SelectBudgetOptions, SelectTravelList } from '@/constants/op
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { chatSession } from '@/service/AIModal';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { FcGoogle } from "react-icons/fc";
+import { useGoogleLogin } from '@react-oauth/google';
+import axios from 'axios';
+
+
 
 function CreateTrip() {
   const [place, setPlace] = useState(null); // State for Google Places input
   const [formData, setFormData] = useState({}); // Initialize as object
   const [error, setError] = useState(''); // State for error messages
+
+  const [openDailog, setOpenDailog] = useState(false);
 
   const handleInputChange = (name, value) => {
     const processedValue = name === 'daysStaying' ? parseInt(value, 10) || 0 : value;
@@ -25,7 +40,29 @@ function CreateTrip() {
     console.log('Updated formData:', formData);
   }, [formData]);
 
-  const OnGenerateTrip =async() => {
+  const login = useGoogleLogin({
+    onSuccess: (tokenInfo) => {
+      console.log('Login Success:', tokenInfo);
+      getUserProfile(tokenInfo); // Fetch user profile after login
+    },
+    onError: (error) => {
+      console.error('Login Error:', error);
+    },
+    scope: 'openid email profile', // Ensure scopes are included
+  });
+
+
+
+
+  const OnGenerateTrip = async () => {
+
+    const user = localStorage.getItem('user');
+
+    if (!user) {
+      setOpenDailog(true)
+      return;
+    }
+
     // Check if any of the required fields are missing or invalid
     if (
       !formData.location ||
@@ -34,12 +71,12 @@ function CreateTrip() {
       !formData.budget ||
       !formData.travelWith
     ) {
-      toast.error('Please fill all the details.');   
+      toast.error('Please fill all the details.');
       return;
     }
 
     // All validations passed
-    toast.success('Trip details successfully generated!');
+    toast.success('Trip details successfully generated! Loading... Please wait a while');
 
     const FINAL_PROMPT = AI_PROMPT
       .replace('{location}', formData?.location?.label || 'your destination')
@@ -49,11 +86,43 @@ function CreateTrip() {
 
     console.log(FINAL_PROMPT);
 
-    const result=await chatSession.sendMessage(FINAL_PROMPT);
+    const result = await chatSession.sendMessage(FINAL_PROMPT);
 
     console.log(result?.response?.text());
 
   };
+
+  const getUserProfile = (tokenInfo) => {
+    if (!tokenInfo?.access_token) {
+      console.error('Access token is missing or invalid.');
+      return;
+    }
+
+    axios
+      .get('https://www.googleapis.com/oauth2/v1/userinfo', {
+        headers: {
+          Authorization: `Bearer ${tokenInfo.access_token}`,
+          Accept: 'application/json',
+        },
+      })
+      .then((resp) => {
+        const userData = resp.data;
+        console.log('User Profile:', userData);
+        localStorage.setItem('user', JSON.stringify(resp.data));
+        setOpenDailog(false);
+        OnGenerateTrip();
+      })
+      .catch((error) => {
+        if (error.response) {
+          console.error('API Error:', error.response.data);
+        } else if (error.request) {
+          console.error('No Response:', error.request);
+        } else {
+          console.error('Error Setting Up Request:', error.message);
+        }
+      });
+  };
+
 
 
 
@@ -105,7 +174,7 @@ function CreateTrip() {
             {SelectBudgetOptions.map((item, index) => (
               <button
                 key={index}
-                className={`p-4 border cursor-pointer rounded-lg hover:shadow-lg ${formData.budget === item.title ? 'border-orange-500' : ''
+                className={`p-4 border cursor-pointer rounded-lg hover:shadow-lg ${formData.budget === item.title ? 'border-orange-700' : ''
                   }`}
                 onClick={() => handleInputChange('budget', item.title)}
               >
@@ -124,7 +193,7 @@ function CreateTrip() {
             {SelectTravelList.map((item, index) => (
               <button
                 key={index}
-                className={`p-4 border cursor-pointer rounded-lg hover:shadow-lg ${formData.travelWith === item.title ? 'border-orange-500' : ''
+                className={`p-4 border cursor-pointer rounded-lg hover:shadow-lg ${formData.travelWith === item.title ? 'border-orange-700' : ''
                   }`}
                 onClick={() => handleInputChange('travelWith', item.title)}
               >
@@ -140,6 +209,27 @@ function CreateTrip() {
       <div className="my-10 flex justify-end">
         <Button onClick={OnGenerateTrip}>Generate Trip</Button>
       </div>
+
+      <Dialog open={openDailog}>
+
+        <DialogContent>
+          <DialogHeader>
+
+            <DialogDescription>
+              <img src="../public/laaganorange.svg" />
+              <h2 className="font-bold text-lg mt-7">Sign In with Google</h2>
+              <p>Sign In to the Website with Google Authentication securely.</p>
+
+              <Button
+                onClick={login}
+                className="w-full mt-5 flex gap-4 items-center">
+                <FcGoogle className='h-7 w-7' />Sign In with Google</Button>
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+
+
     </div>
   );
 }
