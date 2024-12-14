@@ -2,11 +2,13 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
-import Header from './components/custom/Header.jsx' // Adjust the path to your Header file
+import Header from './components/custom/Header.jsx' 
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import CreateTrip from './create-trip/index.jsx'
 import { Toaster } from './components/ui/sonner.jsx'
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import ViewTrip from './view-trip/[tripId]/index.jsx';
+
 
 // Create the router
 const router = createBrowserRouter([
@@ -18,6 +20,10 @@ const router = createBrowserRouter([
     path: '/create-trip',
     element: <CreateTrip />,
   },
+  {
+    path: '/view-trip/:tripId',
+    element: <ViewTrip />,
+  }  
 ]);
 
 // Render the app with Header and Router
