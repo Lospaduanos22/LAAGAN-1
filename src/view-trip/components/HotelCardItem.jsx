@@ -10,12 +10,12 @@ const HotelCardItem = ({ hotel }) => {
   const [photoUrl, setPhotoUrl] = useState();
   useEffect(() => {
     if (hotel) {
-      GetPlaceEPhoto();
+      GetPlacePhoto();
     }
   }, [hotel]);
 
   // Mark the function as async to use 'await'
-  const GetPlaceEPhoto = async () => {
+  const GetPlacePhoto = async () => {
     try {
       const data = {
         textQuery: hotel?.hotelName
