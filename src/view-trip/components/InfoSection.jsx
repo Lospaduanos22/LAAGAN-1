@@ -34,7 +34,22 @@ function InfoSection({ trip }) {
       console.error("Error fetching place details:", error);
     }
   };
-
+  const handleButtonClick = () => {
+    const tripId = "http://localhost:5173/view-trip/"+trip?.id; // Assuming the trip has an 'id' field
+    console.log("Trip ID: ", tripId);
+  
+    // Copy the tripId to the clipboard
+    navigator.clipboard.writeText(tripId)
+      .then(() => {
+        console.log("Trip ID copied to clipboard!");
+        alert("Trip ID copied to clipboard!");
+        // Optionally show a success message to the user
+      })
+      .catch((error) => {
+        console.error("Failed to copy Trip ID: ", error);
+        // Optionally handle the error (e.g., show an alert to the user)
+      });
+  };
   return (
     <div>
       <img
@@ -61,7 +76,7 @@ function InfoSection({ trip }) {
           </div>
         </div>
 
-        <Button>
+        <Button onClick={handleButtonClick}>
           <IoMdSend />
         </Button>
       </div>
