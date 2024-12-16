@@ -1,6 +1,6 @@
 import { Button } from "./components/ui/button";
 import { CarouselDemo } from "./components/demo/CarouselDemo";
-import Hero from "./components/custom/hero.jsx"; // Correctly import the Hero component
+import Hero from "./components/custom/Hero.jsx"; // Correctly import the Hero component
 
 function App() {
   return (
